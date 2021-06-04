@@ -19,21 +19,28 @@ module Bezier
 
     ### Traversing :
     def coords_at(t)
-      [ x_at(t), y_at(t) ]
+      [ x_at(t), y_at(t), z_at(t) ]
     end
 
     def x_at(t)
         @anchor1.x * (1 -t) ** 3 +
         3 * @anchor1.right_handle.x * t * (1 - t) ** 2 +
-        3 * @anchor2.left_handle.x * (1 - t) * t ** 2 +
+        3 * @anchor2.left_handle.x  * (1 - t) * t ** 2 +
         @anchor2.x * t ** 3
     end
 
     def y_at(t)
         @anchor1.y * (1 -t) ** 3 +
         3 * @anchor1.right_handle.y * t * (1 - t) ** 2 +
-        3 * @anchor2.left_handle.y * (1 - t) * t ** 2 +
+        3 * @anchor2.left_handle.y  * (1 - t) * t ** 2 +
         @anchor2.y * t ** 3
+    end
+
+    def z_at(t)
+        @anchor1.z * (1 -t) ** 3 +
+        3 * @anchor1.right_handle.z * t * (1 - t) ** 2 +
+        3 * @anchor2.left_handle.z  * (1 - t) * t ** 2 +
+        @anchor2.z * t ** 3
     end
 
 

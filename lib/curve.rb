@@ -86,6 +86,7 @@ module Bezier
       else  
         @anchors[0].right_handle.x  = @anchors[0].x + ( @anchors[1].x - @anchors[0].x ) / 3.0
         @anchors[0].right_handle.y  = @anchors[0].y + ( @anchors[1].y - @anchors[0].y ) / 3.0
+        @anchors[0].right_handle.z  = @anchors[0].z + ( @anchors[1].z - @anchors[0].z ) / 3.0
 
       end
     end
@@ -97,23 +98,43 @@ module Bezier
       else  
         @anchors[-1].left_handle.x  = @anchors[-1].x + ( @anchors[-2].x - @anchors[-1].x ) / 3.0
         @anchors[-1].left_handle.y  = @anchors[-1].y + ( @anchors[-2].y - @anchors[-1].y ) / 3.0
+        @anchors[-1].left_handle.z  = @anchors[-1].z + ( @anchors[-2].z - @anchors[-1].z ) / 3.0
 
       end
     end
 
     def balance_anchor(before,anchor,after)
-      angle1        = Bezier::Trigo::angle_of before, anchor
-      angle2        = Bezier::Trigo::angle_of         anchor, after
-      handle_angle  = ( angle1 + angle2 ) / 2.0
-      handle_angle += Math::PI if ( angle1 - angle2 ).abs > Math::PI
+      #angle1        = Bezier::Trigo::angle_of before, anchor
+      #angle2        = Bezier::Trigo::angle_of         anchor, after
+      angle_zx_1        = Bezier::Trigo::angle_zx_of before, anchor
+      angle_xy_1        = Bezier::Trigo::angle_xy_of before, anchor
+      angle_zx_2        = Bezier::Trigo::angle_zx_of         anchor, after
+      angle_xy_2        = Bezier::Trigo::angle_xy_of         anchor, after
+      #handle_angle  = ( angle1 + angle2 ) / 2.0
+      #handle_angle += Math::PI if ( angle1 - angle2 ).abs > Math::PI
+      handle_angle_zx   = ( angle_zx_1 + angle_zx_2 ) / 2.0
+      handle_angle_zx  += Math::PI if ( angle_zx_1 - angle_zx_2 ).abs > Math::PI
 
-      length1       = Bezier::Trigo::magnitude(anchor.coords, before.coords) / 3.0
-      length2       = Bezier::Trigo::magnitude(anchor.coords, after.coords)  / 3.0
+      handle_angle_xy   = ( angle_xy_1 + angle_xy_2 ) / 2.0
+      handle_angle_xy  += Math::PI if ( angle_xy_1 - angle_xy_2 ).abs > Math::PI
 
-      anchor.left_handle.x  = anchor.x - length1 * Math::cos(handle_angle)
-      anchor.left_handle.y  = anchor.y - length1 * Math::sin(handle_angle)
-      anchor.right_handle.x = anchor.x + length2 * Math::cos(handle_angle)
-      anchor.right_handle.y = anchor.y + length2 * Math::sin(handle_angle)
+      #length1       = Bezier::Trigo::magnitude(anchor.coords, before.coords) / 3.0
+      #length2       = Bezier::Trigo::magnitude(anchor.coords, after.coords)  / 3.0
+      length1       = Bezier::Trigo::magnitude(anchor, before) / 3.0
+      length2       = Bezier::Trigo::magnitude(anchor,  after) / 3.0
+
+      #anchor.left_handle.x  = anchor.x - length1 * Math::cos(handle_angle)
+      #anchor.left_handle.y  = anchor.y - length1 * Math::sin(handle_angle)
+      #anchor.right_handle.x = anchor.x + length2 * Math::cos(handle_angle)
+      #anchor.right_handle.y = anchor.y + length2 * Math::sin(handle_angle)
+
+      anchor.left_handle.x  = anchor.x - length1 * Math::cos(handle_angle_xy) * Math::sin(handle_angle_zx)
+      anchor.left_handle.y  = anchor.y - length1 * Math::sin(handle_angle_xy)
+      anchor.left_handle.z  = anchor.z - length1 * Math::cos(handle_angle_xy) * Math::cos(handle_angle_zx)
+
+      anchor.right_handle.x = anchor.x + length2 * Math::cos(handle_angle_xy) * Math::sin(handle_angle_zx)
+      anchor.right_handle.y = anchor.y + length2 * Math::sin(handle_angle_xy)
+      anchor.right_handle.z = anchor.z + length2 * Math::cos(handle_angle_xy) * Math::cos(handle_angle_zx)
     end
 
     def balance_at(index)
@@ -131,8 +152,10 @@ module Bezier
         # ... at one third and two thirds of the segment.
         @anchors[0].right_handle.x  = @anchors[0].x +       ( @anchors[1].x - @anchors[0].x ) / 3.0
         @anchors[0].right_handle.y  = @anchors[0].y +       ( @anchors[1].y - @anchors[0].y ) / 3.0
+        @anchors[0].right_handle.z  = @anchors[0].z +       ( @anchors[1].z - @anchors[0].z ) / 3.0
         @anchors[1].left_handle.x   = @anchors[1].x + 2.0 * ( @anchors[1].x - @anchors[0].x ) / 3.0
         @anchors[1].left_handle.y   = @anchors[1].y + 2.0 * ( @anchors[1].y - @anchors[0].y ) / 3.0
+        @anchors[1].left_handle.z   = @anchors[1].z + 2.0 * ( @anchors[1].z - @anchors[0].z ) / 3.0
         
       else
         raise "Index out of range (got index #{index} for a length of #{@anchors.length})!" if index >= @anchors.length
