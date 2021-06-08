@@ -8,7 +8,7 @@ require '/lib/curve.rb'
 
 
 ### Constants :
-RENDERING_STEPS   = 25
+RENDERING_STEPS   = 24
 TRAVERSING_SPEED  = 0.01
 
 CAMERA_DISTANCE   = 400
@@ -67,46 +67,64 @@ end
 
 ### Drawing :
 def draw_curve(args,curve)
+  ## Precalculate sin and cos values :
+  cos_a = Math::cos(args.state.angle)
+  sin_a = Math::sin(args.state.angle)
+
   ## Anchors :
-  curve.anchors.each { |anchor| draw_square args, anchor.center, [0, 0, 0, 255] }
+  curve.anchors.each.with_index do |anchor,index|
+    coords = transform_3d anchor.center.coords, cos_a, sin_a
+    draw_square args, coords, [0, 0, 0, 255]
+    args.outputs.labels << [ coords[0] + $gtk.args.grid.right / 2,
+                             coords[1] + $gtk.args.grid.top   / 2,
+                             index.to_s ]
+  end
 
   if curve.anchors.length > 1 then
     ## Segments :
-    curve.anchors.each_cons(2) do |anchors|
-      args.outputs.lines << [ anchors[0].x + $gtk.args.grid.right / 2,
-                              anchors[0].y + $gtk.args.grid.top   / 2,
-                              anchors[1].x + $gtk.args.grid.right / 2,
-                              anchors[1].y + $gtk.args.grid.top   / 2 ] + [ 100, 100, 100, 255 ] 
+    curve.anchors.map do |anchor|
+      transform_3d anchor.center.coords, cos_a, sin_a
+    end
+    .each_cons(2) do |coords|
+      args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
+                              coords[0][1] + $gtk.args.grid.top   / 2,
+                              coords[1][0] + $gtk.args.grid.right / 2,
+                              coords[1][1] + $gtk.args.grid.top   / 2 ] + [ 100, 100, 100, 255 ] 
     end
 
-  #  ## Controls :
-  #  curve.anchors.each.with_index do |anchor,index|
-  #    # Left handle :
-  #    if curve.is_closed || index > 0 then
-  #      draw_square args, anchor.left_handle, [0, 0, 255, 255]
-  #      args.outputs.lines << [ anchor.x, anchor.y, anchor.left_handle.x, anchor.left_handle.y, 200, 200, 255, 255 ]
-  #    end
+    ## Controls :
+    curve.anchors.each.with_index do |anchor,index|
+      # Left handle :
+      if curve.is_closed || index > 0 then
+        draw_square args, anchor.left_handle, [0, 0, 255, 255]
+        args.outputs.lines << [ anchor.x, anchor.anchor.left_handle.x, anchor.left_handle.y, 200, 200, 255, 255 ]
+      end
 
-  #    # Right handle :
-  #    if curve.is_closed || index < curve.anchors.length - 1 then
-  #      draw_square args, anchor.right_handle, [255, 0, 0, 255]
-  #      args.outputs.lines << [ anchor.x, anchor.y, anchor.right_handle.x, anchor.right_handle.y, 200, 200, 255, 255 ]
-  #    end
-  #  end
+      # Right handle :
+      if curve.is_closed || index < curve.anchors.length - 1 then
+        draw_square args, anchor.right_handle, [255, 0, 0, 255]
+        args.outputs.lines << [ anchor.x, anchor.y, anchor.right_handle.x, anchor.right_handle.y, 200, 200, 255, 255 ]
+      end
+    end
 
     ## Sections :
-    curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255]) }
+    curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255], cos_a, sin_a) }
   end
 end
 
-def draw_section(args,section,color)
+def draw_section(args,section,color,cos_a,sin_a)
   t0          = 1.0 / RENDERING_STEPS
-  key_points  = RENDERING_STEPS.times.inject([]) { |p,i| p << section.coords_at(t0 * i) }
-  key_points.each_cons(2) do |points|
-    args.outputs.lines << [ points[0][0] + $gtk.args.grid.right / 2,
-                            points[0][1] + $gtk.args.grid.top   / 2,
-                            points[1][0] + $gtk.args.grid.right / 2,
-                            points[1][1] + $gtk.args.grid.top   / 2 ] + color
+  RENDERING_STEPS.times.inject([]) do |points,i|
+    points << section.coords_at(t0 * i)
+  end
+  .map do |point|
+    transform_3d point, cos_a, sin_a
+  end
+  .each_cons(2) do |coords|
+    args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
+                            coords[0][1] + $gtk.args.grid.top   / 2,
+                            coords[1][0] + $gtk.args.grid.right / 2,
+                            coords[1][1] + $gtk.args.grid.top   / 2 ] + color
   end
 end
 
@@ -139,34 +157,42 @@ def draw_small_cross(args,coords,color)
                           coords[1] + 2 + $gtk.args.grid.top   / 2 ] + color
 end
 
-def draw_square(args,point,color)
-  args.outputs.solids << [ point.x - 2 + $gtk.args.grid.right / 2,
-                           point.y - 2 + $gtk.args.grid.top   / 2,
+def draw_square(args,coords,color)
+  args.outputs.solids << [ coords[0] - 2 + $gtk.args.grid.right / 2,
+                           coords[1] - 2 + $gtk.args.grid.top   / 2,
                            5, 5 ] + color
 end
 
 
-## Rotation :
-def rotate_x(x,y,z,a)
-  [ x,
-    y * Math::cos(a) - z * Math::sin(a),
-    y * Math::sin(a) + z * Math::cos(a) ]
+## 3D Transformations :
+def rotate_x(coords,cos_a,sin_a)
+  [ coords[0],
+    coords[1] * cos_a - coords[2] * sin_a,
+    coords[1] * sin_a + coords[2] * cos_a ]
 end
 
-def rotate_y(x,y,z,a)
-  [ x * Math::cos(a) + z * Math::sin(a),
-    y,
-    z * Math::cos(a) - x * Math::sin(a) ]
+def rotate_y(coords,cos_a,sin_a)
+  [ coords[0] * cos_a + coords[2] * sin_a,
+    coords[1],
+    coords[2] * cos_a - coords[0] * sin_a ]
 end
 
-def rotate_z(x,y,z,a)
-  [ x * Math::cos(a) - y * Math::sin(a),
-    x * Math::sin(a) + y * Math::cos(a),
-    z ]
+def rotate_z(coords,cos_a,sin_a)
+  [ coords[0] * cos_a - coords[1] * sin_a,
+    coords[0] * sin_a + coords[1] * cos_a,
+    coords[2] ]
 end
 
+def project(coords)
+  [ 640 * coords[0] / ( coords[2] - CAMERA_DISTANCE ),
+    360 * coords[1] / ( coords[2] - CAMERA_DISTANCE ),
+    coords[2] ]   # keeping z for other depth operations, like coloring
+end
 
-## Projection :
-def project(x,y,z)
-  [ x / ( z - CAMERA_DISTANCE ), y / ( z - CAMERA_DISTANCE ) ]
+def transform_3d(coords,cos_a,sin_a)
+  new_coords = rotate_x coords,     cos_a, sin_a
+  new_coords = rotate_y new_coords, cos_a, sin_a
+  new_coords = rotate_z new_coords, cos_a, sin_a
+
+  project new_coords
 end

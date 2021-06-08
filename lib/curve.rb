@@ -156,10 +156,6 @@ module Bezier
         @anchors[1].left_handle.x   = @anchors[1].x + 2.0 * ( @anchors[1].x - @anchors[0].x ) / 3.0
         @anchors[1].left_handle.y   = @anchors[1].y + 2.0 * ( @anchors[1].y - @anchors[0].y ) / 3.0
         @anchors[1].left_handle.z   = @anchors[1].z + 2.0 * ( @anchors[1].z - @anchors[0].z ) / 3.0
-        
-      else
-        raise "Index out of range (got index #{index} for a length of #{@anchors.length})!" if index >= @anchors.length
-
         case index
         when 0                    then  balance_first_anchor
         when @anchors.length - 1  then  balance_last_anchor
