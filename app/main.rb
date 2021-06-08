@@ -93,19 +93,19 @@ def draw_curve(args,curve)
     end
 
     ## Controls :
-    curve.anchors.each.with_index do |anchor,index|
-      # Left handle :
-      if curve.is_closed || index > 0 then
-        draw_square args, anchor.left_handle, [0, 0, 255, 255]
-        args.outputs.lines << [ anchor.x, anchor.anchor.left_handle.x, anchor.left_handle.y, 200, 200, 255, 255 ]
-      end
+    #curve.anchors.each.with_index do |anchor,index|
+    #  # Left handle :
+    #  if curve.is_closed || index > 0 then
+    #    draw_square args, anchor.left_handle, [0, 0, 255, 255]
+    #    args.outputs.lines << [ anchor.x, anchor.anchor.left_handle.x, anchor.left_handle.y, 200, 200, 255, 255 ]
+    #  end
 
-      # Right handle :
-      if curve.is_closed || index < curve.anchors.length - 1 then
-        draw_square args, anchor.right_handle, [255, 0, 0, 255]
-        args.outputs.lines << [ anchor.x, anchor.y, anchor.right_handle.x, anchor.right_handle.y, 200, 200, 255, 255 ]
-      end
-    end
+    #  # Right handle :
+    #  if curve.is_closed || index < curve.anchors.length - 1 then
+    #    draw_square args, anchor.right_handle, [255, 0, 0, 255]
+    #    args.outputs.lines << [ anchor.x, anchor.y, anchor.right_handle.x, anchor.right_handle.y, 200, 200, 255, 255 ]
+    #  end
+    #end
 
     ## Sections :
     curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255], cos_a, sin_a) }
