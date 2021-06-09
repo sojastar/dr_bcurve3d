@@ -32,5 +32,14 @@ module Bezier
     def x=(new_x) @center.x = new_x end
     def y=(new_y) @center.y = new_y end
     def z=(new_z) @center.z = new_z end
+
+    def serialize
+      {x: @center.x, y: @center.y, z: @center.z }
+    end
+
+    def inspect
+      serialize.to_s
+    end
+    alias to_s inspect
   end
 end

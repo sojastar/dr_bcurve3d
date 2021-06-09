@@ -5,21 +5,33 @@ module Bezier
     end
 
     def self.angle_xy_of(p1,p2)
+      #puts "in angle_xy_of -> p1: #{p1} - p2: #{p2}"
       angle_offset  = case
                       when p2.x >= p1.x && p2.y >= p1.y then  0.0
                       when p2.x <  p1.x                 then  Math::PI
                       when p2.x >= p1.x && p2.y <  p1.y then  2.0 * Math::PI
                       end
-      angle_offset + Math.atan( ( p2.y - p1.y ).to_f / ( p2.x - p1.x ).to_f )
+
+      if p1.x == p2.x && p1.y == p2.y then
+        0.0
+      else
+        angle_offset + Math.atan( ( p2.y - p1.y ).to_f / ( p2.x - p1.x ).to_f )
+      end
     end
 
     def self.angle_zx_of(p1,p2)
+      #puts "in angle_zx_of -> p1: #{p1} - p2: #{p2}"
       angle_offset  = case
                       when p2.z >= p1.z && p2.x >= p1.x then  0.0
                       when p2.z <  p1.z                 then  Math::PI
                       when p2.z >= p1.z && p2.x <  p1.x then  2.0 * Math::PI
                       end
-      angle_offset + Math.atan( ( p2.x - p1.x ).to_f / ( p2.z - p1.z ).to_f )
+
+      if p1.x == p2.x && p1.z == p2.z then
+        0.0
+      else
+        angle_offset + Math.atan( ( p2.x - p1.x ).to_f / ( p2.z - p1.z ).to_f )
+      end
     end
   end
 end

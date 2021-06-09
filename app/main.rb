@@ -29,6 +29,10 @@ def setup(args)
               [ -100,    0,  200 ],
               [ -200,    0,  100 ],
               [ -100,    0,    0 ] ]
+  #anchors = [ [ -100,  -50,    0 ],
+  #            [    0, -100,    0 ],
+  #            [    0,  100,    0 ],
+  #            [    0,   50, -100 ] ]
   args.state.curve  = Bezier::Curve.new( anchors.map { |a| Bezier::Anchor.new(*a) } ) 
 
   args.state.angle      = 0.0
@@ -93,19 +97,31 @@ def draw_curve(args,curve)
     end
 
     ## Controls :
-    #curve.anchors.each.with_index do |anchor,index|
-    #  # Left handle :
-    #  if curve.is_closed || index > 0 then
-    #    draw_square args, anchor.left_handle, [0, 0, 255, 255]
-    #    args.outputs.lines << [ anchor.x, anchor.anchor.left_handle.x, anchor.left_handle.y, 200, 200, 255, 255 ]
-    #  end
+    curve.anchors.each.with_index do |anchor,index|
+      anchor_coords = transform_3d anchor.coords, cos_a, sin_a
 
-    #  # Right handle :
-    #  if curve.is_closed || index < curve.anchors.length - 1 then
-    #    draw_square args, anchor.right_handle, [255, 0, 0, 255]
-    #    args.outputs.lines << [ anchor.x, anchor.y, anchor.right_handle.x, anchor.right_handle.y, 200, 200, 255, 255 ]
-    #  end
-    #end
+      # Left handle :
+      if curve.is_closed || index > 0 then
+        left_handle_coords = transform_3d anchor.left_handle.coords, cos_a, sin_a
+        draw_square args, left_handle_coords, [0, 0, 255, 255]
+        args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
+                                anchor_coords[1] + $gtk.args.grid.top   / 2,
+                                left_handle_coords[0] + $gtk.args.grid.right / 2,
+                                left_handle_coords[1] + $gtk.args.grid.top   / 2,
+                                200, 200, 255, 255 ]
+      end
+
+      # Right handle :
+      if curve.is_closed || index < curve.anchors.length - 1 then
+        right_handle_coords = transform_3d anchor.right_handle.coords, cos_a, sin_a
+        draw_square args, right_handle_coords, [255, 0, 0, 255]
+        args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
+                                anchor_coords[1] + $gtk.args.grid.top   / 2,
+                                right_handle_coords[0] + $gtk.args.grid.right / 2,
+                                right_handle_coords[1] + $gtk.args.grid.top   / 2,
+                                255, 200, 200, 255 ]
+      end
+    end
 
     ## Sections :
     curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255], cos_a, sin_a) }
@@ -114,7 +130,7 @@ end
 
 def draw_section(args,section,color,cos_a,sin_a)
   t0          = 1.0 / RENDERING_STEPS
-  RENDERING_STEPS.times.inject([]) do |points,i|
+  (RENDERING_STEPS+1).times.inject([]) do |points,i|
     points << section.coords_at(t0 * i)
   end
   .map do |point|
