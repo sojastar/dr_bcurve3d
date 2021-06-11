@@ -104,43 +104,23 @@ module Bezier
     end
 
     def balance_anchor(before,anchor,after)
-      #angle1        = Bezier::Trigo::angle_of before, anchor
-      #angle2        = Bezier::Trigo::angle_of         anchor, after
-      angle_zx_1        = Bezier::Trigo::angle_zx_of before, anchor
-      angle_xy_1        = Bezier::Trigo::angle_xy_of before, anchor
-      angle_zx_2        = Bezier::Trigo::angle_zx_of         anchor, after
-      angle_xy_2        = Bezier::Trigo::angle_xy_of         anchor, after
+      before_normalized = Bezier::Trigo::normalize [  before.x - anchor.x,
+                                                      before.y - anchor.y,
+                                                      before.z - anchor.z ]
+      after_normalized  = Bezier::Trigo::normalize [  after.x - anchor.x,
+                                                      after.y - anchor.y,
+                                                      after.z - anchor.z ]
 
-      puts '-------------'
-      puts "angle_zx_1: #{angle_zx_1} - angle_xy_1: #{angle_xy_1} - angle_zx_2: #{angle_zx_2} - angle_zx_1: #{angle_xy_2}"
+      length_before     = Bezier::Trigo::magnitude(anchor, before) / 3.0
+      length_after      = Bezier::Trigo::magnitude(anchor,  after) / 3.0
 
-      #handle_angle  = ( angle1 + angle2 ) / 2.0
-      #handle_angle += Math::PI if ( angle1 - angle2 ).abs > Math::PI
-      handle_angle_zx   = ( angle_zx_1 + angle_zx_2 ) / 2.0
-      handle_angle_zx  += Math::PI if ( angle_zx_1 - angle_zx_2 ).abs > Math::PI
+      anchor.left_handle.x  = anchor.x + length_before * (before_normalized[0] - after_normalized[0]) / 2.0
+      anchor.left_handle.y  = anchor.y + length_before * (before_normalized[1] - after_normalized[1]) / 2.0
+      anchor.left_handle.z  = anchor.z + length_before * (before_normalized[2] - after_normalized[2]) / 2.0
 
-      handle_angle_xy   = ( angle_xy_1 + angle_xy_2 ) / 2.0
-      handle_angle_xy  += Math::PI if ( angle_xy_1 - angle_xy_2 ).abs > Math::PI
-
-      puts "angle zx: #{handle_angle_zx} - angle xy: #{handle_angle_xy}"
-
-      #length1       = Bezier::Trigo::magnitude(anchor.coords, before.coords) / 3.0
-      #length2       = Bezier::Trigo::magnitude(anchor.coords, after.coords)  / 3.0
-      length1       = Bezier::Trigo::magnitude(anchor, before) / 3.0
-      length2       = Bezier::Trigo::magnitude(anchor,  after) / 3.0
-
-      #anchor.left_handle.x  = anchor.x - length1 * Math::cos(handle_angle)
-      #anchor.left_handle.y  = anchor.y - length1 * Math::sin(handle_angle)
-      #anchor.right_handle.x = anchor.x + length2 * Math::cos(handle_angle)
-      #anchor.right_handle.y = anchor.y + length2 * Math::sin(handle_angle)
-
-      anchor.left_handle.x  = anchor.x - length1 * Math::cos(handle_angle_xy) * Math::sin(handle_angle_zx)
-      anchor.left_handle.y  = anchor.y - length1 * Math::sin(handle_angle_xy)
-      anchor.left_handle.z  = anchor.z - length1 * Math::cos(handle_angle_xy) * Math::cos(handle_angle_zx)
-
-      anchor.right_handle.x = anchor.x + length2 * Math::cos(handle_angle_xy) * Math::sin(handle_angle_zx)
-      anchor.right_handle.y = anchor.y + length2 * Math::sin(handle_angle_xy)
-      anchor.right_handle.z = anchor.z + length2 * Math::cos(handle_angle_xy) * Math::cos(handle_angle_zx)
+      anchor.right_handle.x = anchor.x + length_after * (after_normalized[0] - before_normalized[0]) / 2.0
+      anchor.right_handle.y = anchor.y + length_after * (after_normalized[1] - before_normalized[1]) / 2.0
+      anchor.right_handle.z = anchor.z + length_after * (after_normalized[2] - before_normalized[2]) / 2.0
     end
 
     def balance_at(index)

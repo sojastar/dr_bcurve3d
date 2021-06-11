@@ -29,10 +29,6 @@ def setup(args)
               [ -100,    0,  200 ],
               [ -200,    0,  100 ],
               [ -100,    0,    0 ] ]
-  #anchors = [ [ -100,  -50,    0 ],
-  #            [    0, -100,    0 ],
-  #            [    0,  100,    0 ],
-  #            [    0,   50, -100 ] ]
   args.state.curve  = Bezier::Curve.new( anchors.map { |a| Bezier::Anchor.new(*a) } ) 
 
   args.state.angle      = 0.0

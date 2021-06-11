@@ -4,8 +4,12 @@ module Bezier
       Math::sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2 + (point1.z - point2.z) ** 2)
     end
 
+    def self.normalize(v)
+      m = Math::sqrt( v[0] ** 2 + v[1] ** 2 + v[2] ** 2 )
+      [ v[0] / m, v[1] / m, v[2] / m ]
+    end
+
     def self.angle_xy_of(p1,p2)
-      #puts "in angle_xy_of -> p1: #{p1} - p2: #{p2}"
       angle_offset  = case
                       when p2.x >= p1.x && p2.y >= p1.y then  0.0
                       when p2.x <  p1.x                 then  Math::PI
@@ -20,11 +24,10 @@ module Bezier
     end
 
     def self.angle_zx_of(p1,p2)
-      #puts "in angle_zx_of -> p1: #{p1} - p2: #{p2}"
       angle_offset  = case
                       when p2.z >= p1.z && p2.x >= p1.x then  0.0
-                      when p2.z <  p1.z                 then  Math::PI
-                      when p2.z >= p1.z && p2.x <  p1.x then  2.0 * Math::PI
+                      when p2.x <  p1.x                 then  Math::PI
+                      when p2.x >= p1.x && p2.z <  p1.z then  2.0 * Math::PI
                       end
 
       if p1.x == p2.x && p1.z == p2.z then
