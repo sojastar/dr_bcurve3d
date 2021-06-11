@@ -11,7 +11,7 @@ require '/lib/curve.rb'
 RENDERING_STEPS   = 24
 TRAVERSING_SPEED  = 0.01
 
-CAMERA_DISTANCE   = 400
+CAMERA_DISTANCE   = 500
 
 
 
