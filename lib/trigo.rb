@@ -1,3 +1,9 @@
+class Array
+  def z
+    at(2)
+  end
+end
+
 module Bezier
   module Trigo
     def self.magnitude(point1,point2)

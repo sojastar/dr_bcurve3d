@@ -20,6 +20,8 @@ module Bezier
       # Setup :
       balance
       build_sections
+      compute_length
+      prepare_traversing(steps)
     end
 
 
@@ -84,9 +86,9 @@ module Bezier
         balance_anchor @anchors[-1], @anchors[0], @anchors[1]
 
       else  
-        @anchors[0].right_handle.x  = @anchors[0].x + ( @anchors[1].x - @anchors[0].x ) / 2.0
-        @anchors[0].right_handle.y  = @anchors[0].y + ( @anchors[1].y - @anchors[0].y ) / 2.0
-        @anchors[0].right_handle.z  = @anchors[0].z + ( @anchors[1].z - @anchors[0].z ) / 2.0
+        @anchors[0].right_handle.x  = @anchors[0].x + ( @anchors[1].x - @anchors[0].x ) / 3.0
+        @anchors[0].right_handle.y  = @anchors[0].y + ( @anchors[1].y - @anchors[0].y ) / 3.0
+        @anchors[0].right_handle.z  = @anchors[0].z + ( @anchors[1].z - @anchors[0].z ) / 3.0
 
       end
     end
@@ -96,9 +98,9 @@ module Bezier
         balance_anchor @anchors[-2], @anchors[-1], @anchors[0]
 
       else  
-        @anchors[-1].left_handle.x  = @anchors[-1].x + ( @anchors[-2].x - @anchors[-1].x ) / 2.0
-        @anchors[-1].left_handle.y  = @anchors[-1].y + ( @anchors[-2].y - @anchors[-1].y ) / 2.0
-        @anchors[-1].left_handle.z  = @anchors[-1].z + ( @anchors[-2].z - @anchors[-1].z ) / 2.0
+        @anchors[-1].left_handle.x  = @anchors[-1].x + ( @anchors[-2].x - @anchors[-1].x ) / 3.0
+        @anchors[-1].left_handle.y  = @anchors[-1].y + ( @anchors[-2].y - @anchors[-1].y ) / 3.0
+        @anchors[-1].left_handle.z  = @anchors[-1].z + ( @anchors[-2].z - @anchors[-1].z ) / 3.0
 
       end
     end
@@ -111,16 +113,16 @@ module Bezier
                                                       after.y - anchor.y,
                                                       after.z - anchor.z ]
 
-      length_before     = Bezier::Trigo::magnitude(anchor, before) / 3.0
-      length_after      = Bezier::Trigo::magnitude(anchor,  after) / 3.0
+      length_before     = Bezier::Trigo::magnitude(anchor, before) / 2.0
+      length_after      = Bezier::Trigo::magnitude(anchor,  after) / 2.0
 
-      anchor.left_handle.x  = anchor.x + length_before * (before_normalized[0] - after_normalized[0]) / 2.0
-      anchor.left_handle.y  = anchor.y + length_before * (before_normalized[1] - after_normalized[1]) / 2.0
-      anchor.left_handle.z  = anchor.z + length_before * (before_normalized[2] - after_normalized[2]) / 2.0
+      anchor.left_handle.x  = anchor.x + length_before * (before_normalized[0] - after_normalized[0]) / 3.0
+      anchor.left_handle.y  = anchor.y + length_before * (before_normalized[1] - after_normalized[1]) / 3.0
+      anchor.left_handle.z  = anchor.z + length_before * (before_normalized[2] - after_normalized[2]) / 3.0
 
-      anchor.right_handle.x = anchor.x + length_after * (after_normalized[0] - before_normalized[0]) / 2.0
-      anchor.right_handle.y = anchor.y + length_after * (after_normalized[1] - before_normalized[1]) / 2.0
-      anchor.right_handle.z = anchor.z + length_after * (after_normalized[2] - before_normalized[2]) / 2.0
+      anchor.right_handle.x = anchor.x + length_after * (after_normalized[0] - before_normalized[0]) / 3.0
+      anchor.right_handle.y = anchor.y + length_after * (after_normalized[1] - before_normalized[1]) / 3.0
+      anchor.right_handle.z = anchor.z + length_after * (after_normalized[2] - before_normalized[2]) / 3.0
     end
 
     def balance_at(index)
@@ -219,6 +221,37 @@ module Bezier
       end
 
       @sections[section_index].coords_at_linear(mapped_t) 
+    end
+
+    def normal_at(t)
+      section_index, length_to_section  = find_section_length_at t
+
+      if section_index >= @sections.length then
+        section_index = @sections.length - 1
+        mapped_t      = 1.0
+      else
+        mapped_t      = ( t * @length - length_to_section ) / @sections[section_index].length
+      end
+
+      [ t * @anchors[section_index].normal.x + ( 1.0 - t ) * @anchors[section_index + 1].normal.x,
+        t * @anchors[section_index].normal.y + ( 1.0 - t ) * @anchors[section_indey + 1].normal.y,
+        t * @anchors[section_index].normal.z + ( 1.0 - t ) * @anchors[section_indez + 1].normal.z ]
+    end
+
+    def coords_and_normal_at(t)
+      section_index, length_to_section  = find_section_length_at t
+
+      if section_index >= @sections.length then
+        section_index = @sections.length - 1
+        mapped_t      = 1.0
+      else
+        mapped_t      = ( t * @length - length_to_section ) / @sections[section_index].length
+      end
+
+      @sections[section_index].coords_at_linear(mapped_t) + 
+      [ mapped_t * @anchors[section_index].normal.x + ( 1.0 - mapped_t ) * @anchors[section_index + 1].normal.x,
+        mapped_t * @anchors[section_index].normal.y + ( 1.0 - mapped_t ) * @anchors[section_indey + 1].normal.y,
+        mapped_t * @anchors[section_index].normal.z + ( 1.0 - mapped_t ) * @anchors[section_indez + 1].normal.z ]
     end
 
 

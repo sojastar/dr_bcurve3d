@@ -16,12 +16,14 @@ module Bezier
 
   class Anchor
     attr_reader :center,
-                :left_handle, :right_handle
+                :left_handle, :right_handle,
+                :normal
 
-    def initialize(x,y,z)
-      @center       = Point.new(x,y,z)
+    def initialize(position,normal)
+      @center       = Point.new(*position)
       @left_handle  = Point.new(x - 30, y - 30, z - 30)
       @right_handle = Point.new(x + 30, y + 30, z + 30)
+      @normal       = normal
     end
 
     def x() @center.x end

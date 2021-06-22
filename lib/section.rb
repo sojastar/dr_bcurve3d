@@ -108,6 +108,15 @@ module Bezier
       coords_at(map_linear(t))
     end
 
+    def coords_and_normal_at_linear(t)
+      mapped_t = map_linear(t)
+
+      coords_at(mapped_t) +
+      [ mapped_t * @anchor2.normal.x + ( 1.0 - mapped_t ) * @anchor1.normal.x,
+        mapped_t * @anchor2.normal.y + ( 1.0 - mapped_t ) * @anchor1.normal.y,
+        mapped_t * @anchor2.normal.z + ( 1.0 - mapped_t ) * @anchor1.normal.z ]
+    end
+
 
     ### Inspect :
     def to_s

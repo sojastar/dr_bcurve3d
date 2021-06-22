@@ -19,17 +19,28 @@ CAMERA_DISTANCE   = 400
 
 ### Setup :
 def setup(args)
-  anchors = [ [    0,  100,  100 ],
-              [  100,    0,    0 ],
-              [  200,    0, -100 ],
-              [  100,    0, -200 ],
-              [    0,    0, -100 ],
-              [    0, -100,    0 ],
-              [    0,    0,  100 ],
-              [ -100,    0,  200 ],
-              [ -200,    0,  100 ],
-              [ -100,    0,    0 ] ]
-  args.state.curve  = Bezier::Curve.new( anchors.map { |a| Bezier::Anchor.new(*a) } ) 
+  #anchors = [ [    0,  100,    0 ],
+  #            [  100,    0,    0 ],
+  #            [  200,    0, -100 ],
+  #            [  100,    0, -200 ],
+  #            [    0,    0, -100 ],
+  #            [    0, -100,    0 ],
+  #            [    0,    0,  100 ],
+  #            [ -100,    0,  200 ],
+  #            [ -200,    0,  100 ],
+  #            [ -100,    0,    0 ] ]
+  anchors_data      = [ { position: [  100.0,    0.0,  100.0 ], normal: [ 0.0, 1.0, 0.0 ] },
+                        { position: [  200.0,    0.0,    0.0 ], normal: [ 0.0, 1.0, 0.0 ] },
+                        { position: [  100.0,    0.0, -100.0 ], normal: [ 0.0, 1.0, 0.0 ] },
+                        { position: [ -100.0,  100.0,    0.0 ], normal: [ 0.0, 0.0, 1.0 ] },
+                        { position: [ -200.0,    0.0,    0.0 ], normal: [ 0.0, 0.0, 1.0 ] },
+                        { position: [ -100.0, -100.0,    0.0 ], normal: [ 0.0, 0.0, 1.0 ] } ]
+  anchors           = anchors_data.map do |anchor|
+                        Bezier::Anchor.new  anchor[:position],
+                                            anchor[:normal]
+                      end
+  args.state.curve  = Bezier::Curve.new anchors
+  args.state.curve.close
 
   args.state.angle      = 0.0
   args.state.t          = 0.5
@@ -120,23 +131,29 @@ def draw_curve(args,curve)
     end
 
     ## Sections :
-    curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255], cos_a, sin_a) }
+    curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255], [255, 127, 0, 255], cos_a, sin_a) }
   end
 end
 
-def draw_section(args,section,color,cos_a,sin_a)
-  t0          = 1.0 / RENDERING_STEPS
+def draw_section(args,section,section_color,normal_color,cos_a,sin_a)
+  t0  = 1.0 / RENDERING_STEPS
   (RENDERING_STEPS+1).times.inject([]) do |points,i|
-    points << section.coords_at(t0 * i)
+    #points << section.coords_at(t0 * i)
+    points << section.coords_and_normal_at_linear(t0 * i)
   end
   .map do |point|
-    transform_3d point, cos_a, sin_a
+    transform_3d(point[0,3], cos_a, sin_a) + 
+    transform_3d(point[3,3], cos_a, sin_a)
   end
   .each_cons(2) do |coords|
     args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
                             coords[0][1] + $gtk.args.grid.top   / 2,
                             coords[1][0] + $gtk.args.grid.right / 2,
-                            coords[1][1] + $gtk.args.grid.top   / 2 ] + color
+                            coords[1][1] + $gtk.args.grid.top   / 2 ] + section_color
+    args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
+                            coords[0][1] + $gtk.args.grid.top   / 2,
+                            coords[0][0] + coords[0][3] * 50 + $gtk.args.grid.right / 2,
+                            coords[0][1] + coords[0][4] * 50 + $gtk.args.grid.top   / 2 ] + normal_color
   end
 end
 
