@@ -19,16 +19,6 @@ CAMERA_DISTANCE   = 500
 
 ### Setup :
 def setup(args)
-  #anchors = [ [    0,  100,    0 ],
-  #            [  100,    0,    0 ],
-  #            [  200,    0, -100 ],
-  #            [  100,    0, -200 ],
-  #            [    0,    0, -100 ],
-  #            [    0, -100,    0 ],
-  #            [    0,    0,  100 ],
-  #            [ -100,    0,  200 ],
-  #            [ -200,    0,  100 ],
-  #            [ -100,    0,    0 ] ]
   anchors_data      = [ { position: [  100.0,    0.0,  100.0 ], normal: [ 0.0, 1.0, 0.0 ] },
                         { position: [  200.0,    0.0,    0.0 ], normal: [ 0.0, 1.0, 0.0 ] },
                         { position: [  100.0,    0.0, -100.0 ], normal: [ 0.0, 1.0, 0.0 ] },
@@ -138,7 +128,6 @@ end
 def draw_section(args,section,section_color,normal_color,cos_a,sin_a)
   t0  = 1.0 / RENDERING_STEPS
   (RENDERING_STEPS+1).times.inject([]) do |points,i|
-    #points << section.coords_at(t0 * i)
     points << section.coords_and_normal_at_linear(t0 * i)
   end
   .map do |point|
