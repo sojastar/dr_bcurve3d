@@ -8,6 +8,13 @@ require '/lib/curve.rb'
 
 
 ### Constants :
+ANCHORS           = [ { center: [  100.0,    0.0,  100.0 ], right: [ 0.0, 1.0, 0.0 ] },
+                      { center: [  200.0,    0.0,    0.0 ], right: [ 0.0, 1.0, 0.0 ] },
+                      { center: [  100.0,    0.0, -100.0 ], right: [ 0.0, 1.0, 0.0 ] },
+                      { center: [ -100.0,  100.0,    0.0 ], right: [ 0.0, 0.0, 1.0 ] },
+                      { center: [ -200.0,    0.0,    0.0 ], right: [ 0.0, 0.0, 1.0 ] },
+                      { center: [ -100.0, -100.0,    0.0 ], right: [ 0.0, 0.0, 1.0 ] } ]
+
 RENDERING_STEPS   = 24
 TRAVERSING_SPEED  = 0.01
 
@@ -19,18 +26,10 @@ CAMERA_DISTANCE   = 500
 
 ### Setup :
 def setup(args)
-  anchors_data      = [ { position: [  100.0,    0.0,  100.0 ], normal: [ 0.0, 1.0, 0.0 ] },
-                        { position: [  200.0,    0.0,    0.0 ], normal: [ 0.0, 1.0, 0.0 ] },
-                        { position: [  100.0,    0.0, -100.0 ], normal: [ 0.0, 1.0, 0.0 ] },
-                        { position: [ -100.0,  100.0,    0.0 ], normal: [ 0.0, 0.0, 1.0 ] },
-                        { position: [ -200.0,    0.0,    0.0 ], normal: [ 0.0, 0.0, 1.0 ] },
-                        { position: [ -100.0, -100.0,    0.0 ], normal: [ 0.0, 0.0, 1.0 ] } ]
-  anchors           = anchors_data.map do |anchor|
-                        Bezier::Anchor.new  anchor[:position],
-                                            anchor[:normal]
-                      end
-  args.state.curve  = Bezier::Curve.new anchors
-  args.state.curve.close
+  center_anchors    = anchors_data.map { |anchor| Bezier::Anchor.new anchor[:center] }
+  right_anchors     = anchors_data.map { |anchor| Bezier::Anchor.new anchor[:right] }
+  args.state.track  = Bezier::Track.new center_anchors, right_anchors
+  args.state.track.close
 
   args.state.angle      = 0.0
   args.state.t          = 0.5
