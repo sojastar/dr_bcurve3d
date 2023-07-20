@@ -9,7 +9,7 @@ module Bezier
     def coords() [@x, @y, @z] end
 
     def to_s
-      "(#{@x.round(2)});#{@y.round(2)};#{@z.round(2)})"
+      "(#{@x.round(2)};#{@y.round(2)};#{@z.round(2)})"
     end
     alias inspect to_s
   end
@@ -17,14 +17,11 @@ module Bezier
   class Anchor
     attr_reader :center,
                 :left_handle, :right_handle#,
-                #:normal
 
-    #def initialize(position,normal)
     def initialize(position)
       @center       = Point.new(*position)
       @left_handle  = Point.new(x - 30, y - 30, z - 30)
       @right_handle = Point.new(x + 30, y + 30, z + 30)
-      #@normal       = normal
     end
 
     def x() @center.x end

@@ -1,7 +1,7 @@
 module Bezier
-  class Curve
-    DEFAULT_STEPS = 24 
+  DEFAULT_STEPS = 24 
 
+  class Curve
     attr_accessor :sections, :anchors, :length, :is_closed
 
     ### INITIALIZATION :
@@ -222,37 +222,6 @@ module Bezier
 
       @sections[section_index].coords_at_linear(mapped_t) 
     end
-
-    #def normal_at(t)
-    #  section_index, length_to_section  = find_section_length_at t
-
-    #  if section_index >= @sections.length then
-    #    section_index = @sections.length - 1
-    #    mapped_t      = 1.0
-    #  else
-    #    mapped_t      = ( t * @length - length_to_section ) / @sections[section_index].length
-    #  end
-
-    #  [ t * @anchors[section_index].normal.x + ( 1.0 - t ) * @anchors[section_index + 1].normal.x,
-    #    t * @anchors[section_index].normal.y + ( 1.0 - t ) * @anchors[section_indey + 1].normal.y,
-    #    t * @anchors[section_index].normal.z + ( 1.0 - t ) * @anchors[section_indez + 1].normal.z ]
-    #end
-
-    #def coords_and_normal_at(t)
-    #  section_index, length_to_section  = find_section_length_at t
-
-    #  if section_index >= @sections.length then
-    #    section_index = @sections.length - 1
-    #    mapped_t      = 1.0
-    #  else
-    #    mapped_t      = ( t * @length - length_to_section ) / @sections[section_index].length
-    #  end
-
-    #  @sections[section_index].coords_at_linear(mapped_t) + 
-    #  [ mapped_t * @anchors[section_index].normal.x + ( 1.0 - mapped_t ) * @anchors[section_index + 1].normal.x,
-    #    mapped_t * @anchors[section_index].normal.y + ( 1.0 - mapped_t ) * @anchors[section_indey + 1].normal.y,
-    #    mapped_t * @anchors[section_index].normal.z + ( 1.0 - mapped_t ) * @anchors[section_indez + 1].normal.z ]
-    #end
 
 
     ### LOADING FROM FILE :

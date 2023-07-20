@@ -14,6 +14,8 @@ module Bezier
     def initialize(anchor1,anchor2)
       @anchor1  = anchor1
       @anchor2  = anchor2
+
+      compute_precise_length
     end
   
 
@@ -121,9 +123,10 @@ module Bezier
     ### Inspect :
     def to_s
       "x- first anchor  : #{@anchor1.center} - #{@anchor1.object_id}\n" +
-      "<- first handle  : #{@anchor1.right_handle} - #{@anchor1.right_handle.object_id}\n" +
-      "-> second handle : #{@anchor2.left_handle} - #{@anchor1.left_handle.object_id}\n" +
-      "-x second anchor : #{@anchor2.center} - #{@anchor1.object_id}\n"
+      "-> first handle  : #{@anchor1.right_handle} - #{@anchor1.right_handle.object_id}\n" +
+      "<- second handle : #{@anchor2.left_handle} - #{@anchor1.left_handle.object_id}\n" +
+      "-x second anchor : #{@anchor2.center} - #{@anchor1.object_id}\n" +
+      " length: #{@length}"
     end
     alias inspect to_s
   end

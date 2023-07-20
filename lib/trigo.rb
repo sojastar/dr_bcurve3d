@@ -16,9 +16,9 @@ module Bezier
     end
 
     def self.cross_product(v1,v2)
-      [ v1.y * v2.z - v1.z * v2.y,
-        v1.z * v2.x - v1.x * v2.z,
-        v1.x * v2.y - v1.y * v2.x ]
+      [ v1[1] * v2[2] - v1[2] * v2[1],
+        v1[2] * v2[0] - v1[0] * v2[2],
+        v1[0] * v2[1] - v1[1] * v2[0] ]
     end
 
     def self.angle_xy_of(p1,p2)

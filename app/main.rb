@@ -2,20 +2,31 @@ require '/lib/trigo.rb'
 require '/lib/anchor.rb'
 require '/lib/section.rb'
 require '/lib/curve.rb'
+require '/lib/track.rb'
 
 
 
 
 
 ### Constants :
-ANCHORS           = [ { center: [  100.0,    0.0,  100.0 ], right: [ 0.0, 1.0, 0.0 ] },
-                      { center: [  200.0,    0.0,    0.0 ], right: [ 0.0, 1.0, 0.0 ] },
-                      { center: [  100.0,    0.0, -100.0 ], right: [ 0.0, 1.0, 0.0 ] },
-                      { center: [ -100.0,  100.0,    0.0 ], right: [ 0.0, 0.0, 1.0 ] },
-                      { center: [ -200.0,    0.0,    0.0 ], right: [ 0.0, 0.0, 1.0 ] },
-                      { center: [ -100.0, -100.0,    0.0 ], right: [ 0.0, 0.0, 1.0 ] } ]
+ANCHORS           = [ { center: [  100.0,    0.0,  100.0 ], right: [  100.0,    20.0,  100.0 ] },
+                      { center: [  200.0,    0.0,    0.0 ], right: [  200.0,    20.0,    0.0 ] },
+                      { center: [  100.0,    0.0, -100.0 ], right: [  100.0,    20.0, -100.0 ] },
+                      { center: [ -100.0,  100.0,    0.0 ], right: [ -100.0,  100.0,    20.0 ] },
+                      { center: [ -200.0,    0.0,    0.0 ], right: [ -200.0,    0.0,    20.0 ] },
+                      { center: [ -100.0, -100.0,    0.0 ], right: [ -100.0, -100.0,    20.0 ] } ]
 
-RENDERING_STEPS   = 24
+CENTER_COLOR    = [   0,   0, 255 ]
+RIGHT_COLOR     = [   0, 255,   0 ]
+TOP_COLOR       = [ 255,   0,   0 ]
+TRACK_COLORS    = [ CENTER_COLOR + [ 255 ],
+                    RIGHT_COLOR  + [ 255 ],
+                    TOP_COLOR    + [ 255 ] ]
+TRACK_COLORS025 = [ CENTER_COLOR + [ 1 ],
+                    RIGHT_COLOR  + [ 1 ],
+                    TOP_COLOR    + [ 64 ] ] 
+
+RENDERING_STEPS   = 12#24
 TRAVERSING_SPEED  = 0.01
 
 CAMERA_DISTANCE   = 500
@@ -26,8 +37,8 @@ CAMERA_DISTANCE   = 500
 
 ### Setup :
 def setup(args)
-  center_anchors    = anchors_data.map { |anchor| Bezier::Anchor.new anchor[:center] }
-  right_anchors     = anchors_data.map { |anchor| Bezier::Anchor.new anchor[:right] }
+  center_anchors    = ANCHORS.map { |anchor| Bezier::Anchor.new anchor[:center] }
+  right_anchors     = ANCHORS.map { |anchor| Bezier::Anchor.new anchor[:right] }
   args.state.track  = Bezier::Track.new center_anchors, right_anchors
   args.state.track.close
 
@@ -53,8 +64,8 @@ def tick(args)
 
 
   # Render :
-  unless args.state.curve.nil? then
-    draw_curve args, args.state.curve
+  unless args.state.track.nil? then
+    draw_track args, args.state.track
   end
 
   #args.outputs.labels << [20, 700, ""]
@@ -66,82 +77,83 @@ end
 
 
 ### Drawing :
-def draw_curve(args,curve)
+def draw_track(args,track)
   ## Precalculate sin and cos values :
   cos_a = Math::cos(args.state.angle)
   sin_a = Math::sin(args.state.angle)
 
   ## Anchors :
-  curve.anchors.each.with_index do |anchor,index|
-    coords = transform_3d anchor.center.coords, cos_a, sin_a
-    draw_square args, coords, [0, 0, 0, 255]
-    args.outputs.labels << [ coords[0] + $gtk.args.grid.right / 2,
-                             coords[1] + $gtk.args.grid.top   / 2,
-                             index.to_s ]
+  all_anchors = track.anchors.values
+
+  all_anchors.each.with_index do |anchors,index|
+    anchors.each do |anchor|
+      coords = transform_3d anchor.coords, cos_a, sin_a
+      draw_square args, coords, TRACK_COLORS[index]
+    end
   end
 
-  if curve.anchors.length > 1 then
+  if all_anchors[0].length > 1 then
     ## Segments :
-    curve.anchors.map do |anchor|
-      transform_3d anchor.center.coords, cos_a, sin_a
+    all_anchors.each.with_index do |anchors,index|
+      anchors.map { |anchor| transform_3d anchor.coords, cos_a, sin_a }
+      .each_cons(2) { |coords|
+        args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
+                                coords[0][1] + $gtk.args.grid.top   / 2,
+                                coords[1][0] + $gtk.args.grid.right / 2,
+                                coords[1][1] + $gtk.args.grid.top   / 2 ] + TRACK_COLORS025[index]
+      }
     end
-    .each_cons(2) do |coords|
-      args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
-                              coords[0][1] + $gtk.args.grid.top   / 2,
-                              coords[1][0] + $gtk.args.grid.right / 2,
-                              coords[1][1] + $gtk.args.grid.top   / 2 ] + [ 100, 100, 100, 255 ] 
-    end
 
-    ## Controls :
-    curve.anchors.each.with_index do |anchor,index|
-      anchor_coords = transform_3d anchor.coords, cos_a, sin_a
+    ## Handles :
+    all_anchors.each.with_index do |anchors,index|
+      anchors.each do |anchor|
+  #  #  anchor_coords = transform_3d anchor.coords, cos_a, sin_a
 
-      # Left handle :
-      if curve.is_closed || index > 0 then
-        left_handle_coords = transform_3d anchor.left_handle.coords, cos_a, sin_a
-        draw_square args, left_handle_coords, [0, 0, 255, 255]
-        args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
-                                anchor_coords[1] + $gtk.args.grid.top   / 2,
-                                left_handle_coords[0] + $gtk.args.grid.right / 2,
-                                left_handle_coords[1] + $gtk.args.grid.top   / 2,
-                                200, 200, 255, 255 ]
-      end
+  #  #  # Left handle :
+  #  #  if curve.is_closed || index > 0 then
+  #  #    left_handle_coords = transform_3d anchor.left_handle.coords, cos_a, sin_a
+  #  #    draw_square args, left_handle_coords, [0, 0, 255, 255]
+  #  #    args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
+  #  #                            anchor_coords[1] + $gtk.args.grid.top   / 2,
+  #  #                            left_handle_coords[0] + $gtk.args.grid.right / 2,
+  #  #                            left_handle_coords[1] + $gtk.args.grid.top   / 2,
+  #  #                            200, 200, 255, 255 ]
+  #  #  end
 
-      # Right handle :
-      if curve.is_closed || index < curve.anchors.length - 1 then
-        right_handle_coords = transform_3d anchor.right_handle.coords, cos_a, sin_a
-        draw_square args, right_handle_coords, [255, 0, 0, 255]
-        args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
-                                anchor_coords[1] + $gtk.args.grid.top   / 2,
-                                right_handle_coords[0] + $gtk.args.grid.right / 2,
-                                right_handle_coords[1] + $gtk.args.grid.top   / 2,
-                                255, 200, 200, 255 ]
+  #  #  # Right handle :
+  #  #  if curve.is_closed || index < curve.anchors.length - 1 then
+  #  #    right_handle_coords = transform_3d anchor.right_handle.coords, cos_a, sin_a
+  #  #    draw_square args, right_handle_coords, [255, 0, 0, 255]
+  #  #    args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
+  #  #                            anchor_coords[1] + $gtk.args.grid.top   / 2,
+  #  #                            right_handle_coords[0] + $gtk.args.grid.right / 2,
+  #  #                            right_handle_coords[1] + $gtk.args.grid.top   / 2,
+  #  #                            255, 200, 200, 255 ]
       end
     end
 
     ## Sections :
-    curve.sections.each { |section| draw_section(args, section, [0, 0, 255, 255], [255, 127, 0, 255], cos_a, sin_a) }
+    track.curves.values.each.with_index do |curve,index|
+      curve.sections.each do |section|
+        draw_section(args, section, TRACK_COLORS[index], cos_a, sin_a)
+      end
+    end
   end
 end
 
-def draw_section(args,section,section_color,normal_color,cos_a,sin_a)
+def draw_section(args,section,section_color,cos_a,sin_a)
   t0  = 1.0 / RENDERING_STEPS
   (RENDERING_STEPS+1).times.inject([]) do |points,i|
-    points << section.coords_and_normal_at_linear(t0 * i)
+    points << section.coords_at_linear(t0 * i)
   end
   .map do |point|
-    transform_3d(point[0,3], cos_a, sin_a) + 
-    transform_3d(point[3,3], cos_a, sin_a)
+    transform_3d(point, cos_a, sin_a)
   end
   .each_cons(2) do |coords|
     args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
                             coords[0][1] + $gtk.args.grid.top   / 2,
                             coords[1][0] + $gtk.args.grid.right / 2,
                             coords[1][1] + $gtk.args.grid.top   / 2 ] + section_color
-    args.outputs.lines << [ coords[0][0] + $gtk.args.grid.right / 2,
-                            coords[0][1] + $gtk.args.grid.top   / 2,
-                            coords[0][0] + coords[0][3] * 50 + $gtk.args.grid.right / 2,
-                            coords[0][1] + coords[0][4] * 50 + $gtk.args.grid.top   / 2 ] + normal_color
   end
 end
 
