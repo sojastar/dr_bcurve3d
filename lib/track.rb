@@ -7,21 +7,22 @@ module Bezier
 
     ### INITIALIZATION :
     def initialize(center,right,distance=DEFAULT_DISTANCE,steps=DEFAULT_STEPS)
-      @center = Bezier::Curve.new center, steps
+      center_anchors  = center.map { |coords| Bezier::Anchor.new coords }
+      @center = Bezier::Curve.new center_anchors, steps
 
-      scaled_right  = center.zip(right).map do |c,r|
-                        Bezier::Anchor.new calculate_right(c.coords, r.coords)
-                      end
-      @right        = Bezier::Curve.new scaled_right,  steps
+      scaled_right_anchors  = center.zip(right).map do |c,r|
+                                Bezier::Anchor.new calculate_right(c, r)
+                              end
+      @right        = Bezier::Curve.new scaled_right_anchors,  steps
 
-      up  = @center.anchors.zip(@right.anchors).map do |c,r|
-              delta_front = [ c.right_handle.coords.x - c.coords.x,
-                              c.right_handle.coords.y - c.coords.y,
-                              c.right_handle.coords.z - c.coords.z ]
+      up_anchors  = @center.anchors.zip(@right.anchors).map do |c,r|
+                      delta_front = [ c.right_handle.coords.x - c.coords.x,
+                                      c.right_handle.coords.y - c.coords.y,
+                                      c.right_handle.coords.z - c.coords.z ]
 
-              Bezier::Anchor.new calculate_up(c.coords, delta_front, r.coords)
-            end
-      @up = Bezier::Curve.new up, steps
+                      Bezier::Anchor.new calculate_up(c.coords, delta_front, r.coords)
+                    end
+      @up = Bezier::Curve.new up_anchors, steps
     end
 
 

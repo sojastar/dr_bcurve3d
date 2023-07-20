@@ -26,7 +26,7 @@ TRACK_COLORS025 = [ CENTER_COLOR + [ 1 ],
                     RIGHT_COLOR  + [ 1 ],
                     TOP_COLOR    + [ 64 ] ] 
 
-RENDERING_STEPS   = 12#24
+RENDERING_STEPS   = 8
 TRAVERSING_SPEED  = 0.01
 
 CAMERA_DISTANCE   = 500
@@ -37,9 +37,9 @@ CAMERA_DISTANCE   = 500
 
 ### Setup :
 def setup(args)
-  center_anchors    = ANCHORS.map { |anchor| Bezier::Anchor.new anchor[:center] }
-  right_anchors     = ANCHORS.map { |anchor| Bezier::Anchor.new anchor[:right] }
-  args.state.track  = Bezier::Track.new center_anchors, right_anchors
+  center_coords    = ANCHORS.map { |coords| coords[:center] }
+  right_coords     = ANCHORS.map { |coords| coords[:right] }
+  args.state.track  = Bezier::Track.new center_coords, right_coords, 200
   args.state.track.close
 
   args.state.angle      = 0.0
