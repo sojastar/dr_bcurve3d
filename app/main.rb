@@ -39,7 +39,7 @@ CAMERA_DISTANCE   = 500
 def setup(args)
   center_coords    = ANCHORS.map { |coords| coords[:center] }
   right_coords     = ANCHORS.map { |coords| coords[:right] }
-  args.state.track  = Bezier::Track.new center_coords, right_coords, 200
+  args.state.track  = Bezier::Track.new center_coords, right_coords, 50
   args.state.track.close
 
   args.state.angle      = 0.0

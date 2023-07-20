@@ -11,7 +11,7 @@ module Bezier
       @center = Bezier::Curve.new center_anchors, steps
 
       scaled_right_anchors  = center.zip(right).map do |c,r|
-                                Bezier::Anchor.new calculate_right(c, r)
+                                Bezier::Anchor.new calculate_right(c, r, distance)
                               end
       @right        = Bezier::Curve.new scaled_right_anchors,  steps
 
@@ -20,7 +20,7 @@ module Bezier
                                       c.right_handle.coords.y - c.coords.y,
                                       c.right_handle.coords.z - c.coords.z ]
 
-                      Bezier::Anchor.new calculate_up(c.coords, delta_front, r.coords)
+                      Bezier::Anchor.new calculate_up(c.coords, delta_front, r.coords, distance)
                     end
       @up = Bezier::Curve.new up_anchors, steps
     end
@@ -46,18 +46,18 @@ module Bezier
       @right  << right_anchor
     end
 
-    def calculate_right(center,right)
+    def calculate_right(center,right,distance)
       right_delta     = [ right[0] - center[0],
                           right[1] - center[1],
                           right[2] - center[2] ]
       unit_right_delta  = Trigo.normalize right_delta
 
-      [ center[0] + DEFAULT_DISTANCE * unit_right_delta[0],
-        center[1] + DEFAULT_DISTANCE * unit_right_delta[1],
-        center[2] + DEFAULT_DISTANCE * unit_right_delta[2] ]
+      [ center[0] + distance * unit_right_delta[0],
+        center[1] + distance * unit_right_delta[1],
+        center[2] + distance * unit_right_delta[2] ]
     end
 
-    def calculate_up(center,center_forward,right)
+    def calculate_up(center,center_forward,right,distance)
       forward_delta = Trigo.normalize( [ center_forward[0] - center[0],
                                          center_forward[1] - center[1],
                                          center_forward[2] - center[2] ] )
@@ -68,9 +68,9 @@ module Bezier
 
       unit_up_delta = Trigo.normalize up_delta
 
-      [ center[0] + DEFAULT_DISTANCE * unit_up_delta[0],
-        center[1] + DEFAULT_DISTANCE * unit_up_delta[1],
-        center[2] + DEFAULT_DISTANCE * unit_up_delta[2] ]
+      [ center[0] + distance * unit_up_delta[0],
+        center[1] + distance * unit_up_delta[1],
+        center[2] + distance * unit_up_delta[2] ]
     end
 
 
