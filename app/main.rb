@@ -15,6 +15,10 @@ ANCHORS           = [ { center: [  100.0,    0.0,  100.0 ], right: [  100.0,    
                       { center: [ -100.0,  100.0,    0.0 ], right: [ -100.0,  100.0,    20.0 ] },
                       { center: [ -200.0,    0.0,    0.0 ], right: [ -200.0,    0.0,    20.0 ] },
                       { center: [ -100.0, -100.0,    0.0 ], right: [ -100.0, -100.0,    20.0 ] } ]
+#ANCHORS           = [ { center: [  100.0,    0.0,    0.0 ], right: [  110.0,    0.0,    0.0 ] },
+#                      { center: [    0.0,    0.0,  100.0 ], right: [    0.0,    0.0,  110.0 ] },
+#                      { center: [ -100.0,    0.0,    0.0 ], right: [ -110.0,    0.0,    0.0 ] },
+#                      { center: [    0.0,    0.0, -100.0 ], right: [    0.0,    0.0, -110.0 ] } ]
 
 CENTER_COLOR    = [   0,   0, 255 ]
 RIGHT_COLOR     = [   0, 255,   0 ]
@@ -26,10 +30,15 @@ TRACK_COLORS025 = [ CENTER_COLOR + [ 1 ],
                     RIGHT_COLOR  + [ 1 ],
                     TOP_COLOR    + [ 64 ] ] 
 
+RIGHT_ANGLE_COLOR   = [ 255, 255, 0, 255 ]
+UP_ANGLE_COLOR      = [ 255, 127, 0, 255 ]
+
+ANGLE_SCALE   = 50
+
 RENDERING_STEPS   = 8
 TRAVERSING_SPEED  = 0.01
 
-CAMERA_DISTANCE   = 500
+CAMERA_DISTANCE   = 400
 
 
 
@@ -68,8 +77,6 @@ def tick(args)
     draw_track args, args.state.track
   end
 
-  #args.outputs.labels << [20, 700, ""]
-
 end
 
 
@@ -104,39 +111,18 @@ def draw_track(args,track)
       }
     end
 
-    ## Handles :
-    all_anchors.each.with_index do |anchors,index|
-      anchors.each do |anchor|
-  #  #  anchor_coords = transform_3d anchor.coords, cos_a, sin_a
-
-  #  #  # Left handle :
-  #  #  if curve.is_closed || index > 0 then
-  #  #    left_handle_coords = transform_3d anchor.left_handle.coords, cos_a, sin_a
-  #  #    draw_square args, left_handle_coords, [0, 0, 255, 255]
-  #  #    args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
-  #  #                            anchor_coords[1] + $gtk.args.grid.top   / 2,
-  #  #                            left_handle_coords[0] + $gtk.args.grid.right / 2,
-  #  #                            left_handle_coords[1] + $gtk.args.grid.top   / 2,
-  #  #                            200, 200, 255, 255 ]
-  #  #  end
-
-  #  #  # Right handle :
-  #  #  if curve.is_closed || index < curve.anchors.length - 1 then
-  #  #    right_handle_coords = transform_3d anchor.right_handle.coords, cos_a, sin_a
-  #  #    draw_square args, right_handle_coords, [255, 0, 0, 255]
-  #  #    args.outputs.lines << [ anchor_coords[0] + $gtk.args.grid.right / 2,
-  #  #                            anchor_coords[1] + $gtk.args.grid.top   / 2,
-  #  #                            right_handle_coords[0] + $gtk.args.grid.right / 2,
-  #  #                            right_handle_coords[1] + $gtk.args.grid.top   / 2,
-  #  #                            255, 200, 200, 255 ]
-      end
-    end
-
     ## Sections :
     track.curves.values.each.with_index do |curve,index|
       curve.sections.each do |section|
         draw_section(args, section, TRACK_COLORS[index], cos_a, sin_a)
       end
+    end
+
+    ## Angles :
+    track.curves.values.map { |curve| curve.sections }
+    .transpose
+    .each do |sections|
+      draw_angle(args, sections, RIGHT_ANGLE_COLOR, UP_ANGLE_COLOR, cos_a, sin_a)
     end
   end
 end
@@ -154,6 +140,38 @@ def draw_section(args,section,section_color,cos_a,sin_a)
                             coords[0][1] + $gtk.args.grid.top   / 2,
                             coords[1][0] + $gtk.args.grid.right / 2,
                             coords[1][1] + $gtk.args.grid.top   / 2 ] + section_color
+  end
+end
+
+def draw_angle(args,sections,color1,color2,cos_a,sin_a)
+  t0  = 1.0 / RENDERING_STEPS
+  RENDERING_STEPS.times.inject([]) do |angles,i|
+    center  = sections[0].coords_at_linear(t0 * i)
+    forward = sections[0].coords_at_linear(t0 * ( i + 1 ) )
+    right   = sections[1].coords_at_linear(t0 * i)
+
+    forward_delta = [ forward[0] - center[0],
+                      forward[1] - center[1],
+                      forward[2] - center[2] ]
+    right_delta   = [ right[0] - center[0],
+                      right[1] - center[1],
+                      right[2] - center[2] ]
+    up_delta      = Bezier::Trigo.cross_product forward_delta, right_delta
+    up_delta      = Bezier::Trigo.normalize_and_scale up_delta, ANGLE_SCALE
+
+    up  = [ center[0] + up_delta[0],
+            center[1] + up_delta[1],
+            center[2] + up_delta[2] ]
+
+    angles << { center: center, right: right, up: up }
+  end
+  .each do |angle|
+    center  = transform_3d(angle[:center],  cos_a, sin_a)
+    right   = transform_3d(angle[:right],   cos_a, sin_a)
+    up      = transform_3d(angle[:up],      cos_a, sin_a)
+
+    draw_arrow(args, center, right, color1)
+    draw_arrow(args, center, up,    color2)
   end
 end
 
@@ -192,6 +210,15 @@ def draw_square(args,coords,color)
                            5, 5 ] + color
 end
 
+def draw_arrow(args,p1,p2,color)
+  args.outputs.lines << [ p1[0] + $gtk.args.grid.right / 2,
+                          p1[1] + $gtk.args.grid.top / 2,
+                          p2[0] + $gtk.args.grid.right / 2,
+                          p2[1] + $gtk.args.grid.top / 2,
+                          color ]
+end
+
+
 
 ## 3D Transformations :
 def rotate_x(coords,cos_a,sin_a)
@@ -213,14 +240,15 @@ def rotate_z(coords,cos_a,sin_a)
 end
 
 def project(coords)
-  [ 640 * coords[0] / ( coords[2] - CAMERA_DISTANCE ),
-    360 * coords[1] / ( coords[2] - CAMERA_DISTANCE ),
+  [ -640 * coords[0] / ( coords[2] - CAMERA_DISTANCE ),
+    -360 * coords[1] / ( coords[2] - CAMERA_DISTANCE ),
     coords[2] ]   # keeping z for other depth operations, like coloring
 end
 
 def transform_3d(coords,cos_a,sin_a)
   new_coords = rotate_x coords,     cos_a, sin_a
   new_coords = rotate_y new_coords, cos_a, sin_a
+  #new_coords = rotate_y coords, cos_a, sin_a
   new_coords = rotate_z new_coords, cos_a, sin_a
 
   project new_coords

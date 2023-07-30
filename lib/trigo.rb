@@ -10,9 +10,18 @@ module Bezier
       Math::sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2 + (point1.z - point2.z) ** 2)
     end
 
+    def self.scale(v,a)
+      [ a * v[0], a * v[1], a * v[2] ]
+    end
+
     def self.normalize(v)
       m = Math::sqrt( v[0] ** 2 + v[1] ** 2 + v[2] ** 2 )
       [ v[0] / m, v[1] / m, v[2] / m ]
+    end
+
+    def self.normalize_and_scale(v,a)
+      m = Math::sqrt( v[0] ** 2 + v[1] ** 2 + v[2] ** 2 )
+      [ a * v[0] / m, a * v[1] / m, a * v[2] / m ]
     end
 
     def self.cross_product(v1,v2)
