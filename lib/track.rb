@@ -1,60 +1,53 @@
 module Bezier
   class Track
-    DEFAULT_DISTANCE  = 20
+    DEFAULT_DISTANCE  = 10
     FORWARD_EPSILON   = 0.01
 
-    attr_reader :center, :right, :up
+    attr_reader :center, :right
 
     ### INITIALIZATION :
-    def initialize(center,right,distance=DEFAULT_DISTANCE,steps=DEFAULT_STEPS)
-      center_anchors  = center.map { |coords| Bezier::Anchor.new coords }
+    def initialize(center_anchors,right_anchors,steps=DEFAULT_STEPS)
       @center = Bezier::Curve.new center_anchors, steps
+      @right  = Bezier::Curve.new right_anchors,  steps
+    end
 
-      scaled_right_anchors  = center.zip(right).map do |c,r|
-                                Bezier::Anchor.new calculate_right(c, r, distance)
-                              end
-      @right        = Bezier::Curve.new scaled_right_anchors,  steps
 
-      up_anchors  = @center.anchors.zip(@right.anchors).map do |c,r|
-                      delta_front = [ c.right_handle.coords.x - c.coords.x,
-                                      c.right_handle.coords.y - c.coords.y,
-                                      c.right_handle.coords.z - c.coords.z ]
+    ### LOADING FROM FILE :
+    def self.load(center_file,right_file,steps=DEFAULT_STEPS)
+      center_data     = $gtk.args.gtk.parse_json_file center_file 
+      center_anchors  = center_data.map do |anchor|
+                          Bezier::Anchor.new( anchor['point'],
+                                              anchor['left_handle'],
+                                              anchor['right_handle'] )
+                        end
 
-                      Bezier::Anchor.new calculate_up(c.coords, delta_front, r.coords, distance)
-                    end
-      @up = Bezier::Curve.new up_anchors, steps
+      right_data      = $gtk.args.gtk.parse_json_file right_file 
+      right_anchors   = right_data.map do |anchor|
+                          Bezier::Anchor.new( anchor['point'],
+                                              anchor['left_handle'],
+                                              anchor['right_handle'] )
+                        end
+
+      Bezier::Track.new center_anchors, right_anchors, steps
     end
 
 
     ### ACCESSORS :
     def curves
       { center: @center,
-        right:  @right,
-        up:     @up }
+        right:  @right }
     end
 
 
     ### ANCHOR POINTS :
     def anchors
       { center: @center.anchors,
-        right:  @right.anchors,
-        up:     @up.anchors }
+        right:  @right.anchors }
     end 
 
     def <<(center_anchor,right_anchor)
       @center << center_anchor
       @right  << right_anchor
-    end
-
-    def calculate_right(center,right,distance)
-      right_delta     = [ right[0] - center[0],
-                          right[1] - center[1],
-                          right[2] - center[2] ]
-      unit_right_delta  = Trigo.normalize right_delta
-
-      [ center[0] + distance * unit_right_delta[0],
-        center[1] + distance * unit_right_delta[1],
-        center[2] + distance * unit_right_delta[2] ]
     end
 
     def calculate_up(center,center_forward,right,distance)
@@ -78,7 +71,6 @@ module Bezier
     def close
       @center.close
       @right.close
-      @up.close
     end
 
     def open
@@ -109,8 +101,7 @@ module Bezier
       end
 
       [ @center.coords_at(t),
-        @right.coords_at(t),
-        @up.coords_at(t) ]
+        @right.coords_at(t) ]
     end
   end
 end

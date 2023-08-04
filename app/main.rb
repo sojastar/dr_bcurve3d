@@ -9,16 +9,17 @@ require '/lib/track.rb'
 
 
 ### Constants :
+DISTANCE          = 20
 ANCHORS           = [ { center: [  100.0,    0.0,  100.0 ], right: [  100.0,    20.0,  100.0 ] },
                       { center: [  200.0,    0.0,    0.0 ], right: [  200.0,    20.0,    0.0 ] },
                       { center: [  100.0,    0.0, -100.0 ], right: [  100.0,    20.0, -100.0 ] },
                       { center: [ -100.0,  100.0,    0.0 ], right: [ -100.0,  100.0,    20.0 ] },
                       { center: [ -200.0,    0.0,    0.0 ], right: [ -200.0,    0.0,    20.0 ] },
                       { center: [ -100.0, -100.0,    0.0 ], right: [ -100.0, -100.0,    20.0 ] } ]
-#ANCHORS           = [ { center: [  100.0,    0.0,    0.0 ], right: [  110.0,    0.0,    0.0 ] },
-#                      { center: [    0.0,    0.0,  100.0 ], right: [    0.0,    0.0,  110.0 ] },
-#                      { center: [ -100.0,    0.0,    0.0 ], right: [ -110.0,    0.0,    0.0 ] },
-#                      { center: [    0.0,    0.0, -100.0 ], right: [    0.0,    0.0, -110.0 ] } ]
+#ANCHORS           = [ { center: [  100.0,    0.0,    0.0 ], right: [    DISTANCE + 100.0,    0.0,                 0.0 ] },
+#                      { center: [    0.0,    0.0,  100.0 ], right: [                 0.0,    0.0,    DISTANCE + 100.0 ] },
+#                      { center: [ -100.0,    0.0,    0.0 ], right: [ -(DISTANCE + 100.0),    0.0,                 0.0 ] },
+#                      { center: [    0.0,    0.0, -100.0 ], right: [                 0.0,    0.0, -(DISTANCE + 100.0) ] } ]
 
 CENTER_COLOR    = [   0,   0, 255 ]
 RIGHT_COLOR     = [   0, 255,   0 ]
@@ -33,7 +34,7 @@ TRACK_COLORS025 = [ CENTER_COLOR + [ 1 ],
 RIGHT_ANGLE_COLOR   = [ 255, 255, 0, 255 ]
 UP_ANGLE_COLOR      = [ 255, 127, 0, 255 ]
 
-ANGLE_SCALE   = 50
+ANGLE_SCALE   = DISTANCE
 
 RENDERING_STEPS   = 8
 TRAVERSING_SPEED  = 0.01
@@ -46,9 +47,17 @@ CAMERA_DISTANCE   = 400
 
 ### Setup :
 def setup(args)
-  center_coords    = ANCHORS.map { |coords| coords[:center] }
-  right_coords     = ANCHORS.map { |coords| coords[:right] }
-  args.state.track  = Bezier::Track.new center_coords, right_coords, 50
+
+  ## Use the track defined as a constant in the file :
+  #center_anchors    = ANCHORS.map { |coords| Bezier::Anchor.new coords[:center] }
+  #right_anchors     = ANCHORS.map { |coords| Bezier::Anchor.new coords[:right] }
+  #args.state.track  = Bezier::Track.new center_anchors, right_anchors
+  #args.state.track.close
+  #args.state.track.balance
+
+  ## Use the track imported from Blender :
+  args.state.track  = Bezier::Track.load  '/blender/simple_center.json',
+                                          '/blender/simple_right.json'
   args.state.track.close
 
   args.state.angle      = 0.0

@@ -18,11 +18,24 @@ module Bezier
       @is_closed  = false
 
       # Setup :
-      balance
       build_sections
       compute_length
       prepare_traversing(steps)
     end
+
+
+    ### LOADING FROM FILE :
+    def self.load(filename,steps=DEFAULT_STEPS)
+      anchors_data  = $gtk.args.gtk.parse_json_file filename 
+      anchors       = anchors_data.map do |anchor|
+                        Bezier::Anchor.new  anchor[:center],
+                                            anchor[:left_handle],
+                                            anchor[:right_handle]
+                      end
+
+      Bezier::Curve.new anchors, steps
+    end
+
 
 
     ### ADDING ANCHOR POINTS :
@@ -53,9 +66,6 @@ module Bezier
 
         @is_closed  = true
 
-        balance_last_anchor
-        balance_first_anchor
-
         @length += @sections.last.compute_length(@steps)
         @sections.last.compute_key_lengths(@steps)
       end
@@ -64,11 +74,7 @@ module Bezier
     def open
       if @is_closed then
         @sections.pop
-
         @is_closed  = false
-
-        balance_last_anchor
-        balance_first_anchor
       end
     end
 
@@ -221,11 +227,6 @@ module Bezier
       end
 
       @sections[section_index].coords_at_linear(mapped_t) 
-    end
-
-
-    ### LOADING FROM FILE :
-    def load(filename)
     end
 
 
