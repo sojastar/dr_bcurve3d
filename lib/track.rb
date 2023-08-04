@@ -3,17 +3,22 @@ module Bezier
     DEFAULT_DISTANCE  = 10
     FORWARD_EPSILON   = 0.01
 
-    attr_reader :center, :right
+    attr_reader :center, :right, :ratios
 
     ### INITIALIZATION :
-    def initialize(center_anchors,right_anchors,steps=DEFAULT_STEPS)
+    def initialize(center_anchors,right_anchors,should_close,should_balance,steps=DEFAULT_STEPS)
       @center = Bezier::Curve.new center_anchors, steps
       @right  = Bezier::Curve.new right_anchors,  steps
+
+      close   if should_close
+      balance if should_balance
+
+      calculate_ratios
     end
 
 
     ### LOADING FROM FILE :
-    def self.load(center_file,right_file,steps=DEFAULT_STEPS)
+    def self.load(center_file,right_file,should_close,steps=DEFAULT_STEPS)
       center_data     = $gtk.args.gtk.parse_json_file center_file 
       center_anchors  = center_data.map do |anchor|
                           Bezier::Anchor.new( anchor['point'],
@@ -28,7 +33,7 @@ module Bezier
                                               anchor['right_handle'] )
                         end
 
-      Bezier::Track.new center_anchors, right_anchors, steps
+      Bezier::Track.new center_anchors, right_anchors, should_close, false, steps
     end
 
 
@@ -48,22 +53,6 @@ module Bezier
     def <<(center_anchor,right_anchor)
       @center << center_anchor
       @right  << right_anchor
-    end
-
-    def calculate_up(center,center_forward,right,distance)
-      forward_delta = Trigo.normalize( [ center_forward[0] - center[0],
-                                         center_forward[1] - center[1],
-                                         center_forward[2] - center[2] ] )
-      right_delta   = [ right[0] - center[0],
-                        right[1] - center[1],
-                        right[2] - center[2] ]
-      up_delta      = Trigo.cross_product forward_delta, right_delta
-
-      unit_up_delta = Trigo.normalize up_delta
-
-      [ center[0] + distance * unit_up_delta[0],
-        center[1] + distance * unit_up_delta[1],
-        center[2] + distance * unit_up_delta[2] ]
     end
 
 
@@ -95,13 +84,49 @@ module Bezier
 
 
     ### TRAVERSING :
-    def coords_at(t)
-      if t + FORWARD_EPSILON < 0 || t + FORWARD_EPSILON > 1.0
-        raise "next t out of [0.0, 1.0] range (t=#{t+FORWARD_EPSILON})"
-      end
+    def calculate_ratios
+      cumulated_length_center = 0.0
+      cumulated_length_right  = 0.0
+      @ratios = @center.sections.zip(@right.sections).map do |center_section,right_section|
+                  ratio = { ratio:                    center_section.length /
+                                                      right_section.length,
+                            cumulated_length_center:  cumulated_length_center,
+                            cumulated_length_right:   cumulated_length_right }
 
-      [ @center.coords_at(t),
-        @right.coords_at(t) ]
+                  cumulated_length_center += center_section.length
+                  cumulated_length_right  += right_section.length
+
+                  ratio
+                end
+    end
+
+    def coords_at(t0,distance=DEFAULT_DISTANCE)
+      center  = @center.coords_at(t0)
+
+      t1  = t0 + FORWARD_EPSILON
+      t1  = t1 - 1.0  if t1 > 1.0
+      forward   = @center.coords_at(t1)
+
+      right   = @right.coords_at(t0)
+      up      = calculate_up center, forward, right, distance
+
+      [ center, right, up ]
+    end
+
+    def calculate_up(center,forward,right,distance)
+      forward_delta = [ forward[0] - center[0],
+                        forward[1] - center[1],
+                        forward[2] - center[2] ]
+      right_delta   = [ right[0] - center[0],
+                        right[1] - center[1],
+                        right[2] - center[2] ]
+      up_delta      = Trigo.cross_product right_delta, forward_delta
+
+      up_delta      = Bezier::Trigo.normalize_and_scale up_delta, distance
+
+      [ center[0] + up_delta[0],
+        center[1] + up_delta[1],
+        center[2] + up_delta[2] ]
     end
   end
 end
