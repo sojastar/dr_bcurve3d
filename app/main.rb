@@ -90,6 +90,7 @@ def setup(args)
 
 
   ## 2.4 Miscellaneous :
+  args.outputs.static_labels << [ 20, 700, "Tab to switch between global and camera view" ]
   args.state.mode = :global_view
 
   args.state.setup_done = true
