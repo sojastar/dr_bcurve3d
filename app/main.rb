@@ -45,10 +45,11 @@ ANGLE_SCALE   = DISTANCE
 
 RENDERING_STEPS   = 32
 
-CAMERA_DISTANCE   = 350
+CAMERA_DISTANCE   = 250
 
 
 ## 1.3 Camera View Constants :
+CAMERA_HEIGHT     = 20
 TRAVERSING_SPEED  = 0.002
 FORWARD_OFFSET    = 0.001
 
@@ -376,7 +377,7 @@ def update_camera(track,t0,t1)
                   [              0.0,              0.0,              0.0, 1.0 ] ]
   translation = [ [ 1.0, 0.0, 0.0, -position[0] ],
                   [ 0.0, 1.0, 0.0, -position[1] ],
-                  [ 0.0, 0.0, 1.0, -position[2] - 10 ],
+                  [ 0.0, 0.0, 1.0, -position[2] - CAMERA_HEIGHT ],
                   [ 0.0, 0.0, 0.0, 1.0 ] ]
 
   mat_mul rotation, translation
