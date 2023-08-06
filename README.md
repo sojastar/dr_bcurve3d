@@ -7,7 +7,11 @@
 ## What is it?
 **dr_bcurve3d** is a library for the [DragonRuby](https://dragonruby.itch.io/dragonruby-gtk) game engine. The library's primary function is to create and traverse 3D tracks/curves. Tracks are built by aggregating 2 3D Bézier curves.
 The first curve is called the _center_ curve. Whatever you want to do with the track, spawn objects, attach a camera or extrude, it should be done along that track.
-The second track is called the _right_ track. It gives the _center_ track its orientation in space.
+The second track is called the _right_ track. It represents vectors pointing right from the _center_ curve and gives the track its orientation in space.
+There is a third "virtual" track called _up_. It reprents vectors pointing up from the _center_ curve and is calculated on the fly from the _center_ and _right_ curves.
+
+![The 3 curves in a track](/center_right_up_curves.png)
+
 
 ## You can create tracks programmatically:
 
@@ -37,6 +41,7 @@ Some useful methods:
 - auto-balance the track with `Bezier::Track#balance`
 - get all anchors with `Bezier::Track#anchors`
 
+
 ## You can export tracks from blender:
 
 The `blender` directory contains a blender operator that exports Bézier curves as a json file. Draw 2 curves in Blander, export them with the operator then load them with `Bezier::Track.load`.
@@ -48,9 +53,12 @@ args.state.track  = Bezier::Track.load_and_build  '/blender/simple_center.json',
                                                   TRACK_PRECISION
 ```
 
+![Exporting from Blender](/blender_export.png)
+
+
 ## Traversing the track:
 
-You can get the coordinates for the _center_, _right_, and _up_ curves at any given point along the track by using  `Bezier::Track#coords_at`. The _up_ curve is a "virtual" curve that is pointing up from the direction defined by the _right_ curve and is calculated on the fly. The `Bezier::Track#coords_at` method takes 2 arguments. The first argument _t_ defines the position of the desired 3D coordinates along the track on a scale from 0.0 to 1.0. The second optional arguments _distance_ defines the distance at which the _up_ curve lies from the _center_ track.
+You can get the coordinates for the _center_, _right_, and _up_ curves at any given point along the track by using  `Bezier::Track#coords_at`. The `Bezier::Track#coords_at` method takes 2 arguments. The first argument _t_ defines the position of the desired 3D coordinates along the track on a scale from 0.0 to 1.0. The second optional arguments _distance_ defines the distance at which the _up_ curve lies from the _center_ track.
 
 ```ruby
 center, right, up = args.state.track.coords_at(0.5, 10) # get coords at the middle of the track
