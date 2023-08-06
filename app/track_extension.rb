@@ -4,8 +4,6 @@ module Bezier
 
     def self.build(center,right,should_close,should_balance,width,interval)
       track = Bezier::Track.new center, right, should_close, should_balance
-      #track.close   if should_close
-      #track.balance if should_balance
 
       track.build_vertices track, width, interval
 
@@ -14,7 +12,6 @@ module Bezier
 
     def self.load_and_build(center_file,right_file,should_close,width,interval)
       track = Bezier::Track.load center_file, right_file, should_close
-      #track.close
 
       track.build_vertices track, width, interval
 
@@ -22,12 +19,9 @@ module Bezier
     end
 
     def build_vertices(track,width,interval)
-      center_curve, right_curve = track.curves.values
-      
       t0 = 1.0 / interval
       @vertices = interval.times.map do |i|
-                    center      = center_curve.coords_at(t0 * i)
-                    right       = right_curve.coords_at(t0 * i)
+                    center, right, _ = track.coords_at t0 * i
                     right_delta = [ right[0] - center[0],
                                     right[1] - center[1],
                                     right[2] - center[2] ]

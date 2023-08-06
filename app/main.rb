@@ -13,7 +13,7 @@ require '/app/track_extension.rb'
 ### 1. Constants : #############################################################
 DISTANCE        = 20
 TRACK_WIDTH     = 30
-TRACK_INTERVAL  = 64
+TRACK_INTERVAL  = 48
 
 ## 1.1.1 Definition for a very simple track :
 #ANCHORS           = [ { center: [  100.0,    0.0,    0.0 ], right: [    DISTANCE + 100.0,    0.0,                 0.0 ] },
@@ -49,7 +49,7 @@ CAMERA_DISTANCE   = 350
 
 
 ## 1.3 Camera View Constants :
-TRAVERSING_SPEED  = 0.001
+TRAVERSING_SPEED  = 0.002
 FORWARD_OFFSET    = 0.001
 
 
@@ -182,27 +182,6 @@ def draw_global_view(args,track)
 end
 
 def draw_camera_view(args,track)
-  #track.vertices.each_cons(2).with_index do |pair,index|
-  #  world_vertex_1  = local_to_world args.state.camera, pair.first
-  #  world_vertex_2  = local_to_world args.state.camera, pair.last
-
-  #  if world_vertex_1[2] < 0 && world_vertex_2[2] < 0
-  #    if index % 2 == 0
-  #      projected_vertex_1  = project_camera_view world_vertex_1
-  #      projected_vertex_2  = project_camera_view world_vertex_2
-
-  #      draw_square args, projected_vertex_1, [255, 0, 0, 255]
-  #      draw_square args, projected_vertex_2, [255, 0, 0, 255]
-
-  #      draw_line args, projected_vertex_1, projected_vertex_2, [ 0, 0, 255, 255 ]
-  #    else
-  #      projected_vertex_1  = project_camera_view world_vertex_1
-  #      projected_vertex_2  = project_camera_view world_vertex_2
-
-  #      draw_line args, projected_vertex_1, projected_vertex_2, [ 0, 0, 255, 255 ]
-  #    end
-  #  end
-  #end
   track.vertices.each_slice(4).with_index do |square,index|
     world_vertices  = [ local_to_world(args.state.camera, square[0]),
                         local_to_world(args.state.camera, square[1]),
@@ -374,8 +353,8 @@ end
 
 ### 6.2 Camera on Track View :
 def update_camera(track,t0,t1)
-  position, right, _  = track.coords_at t0
-  forward,      _, _  = track.coords_at t1
+  position, right, up  = track.coords_at t0
+  forward,      _,  _  = track.coords_at t1
 
   right_delta   = [ right[0] - position[0],
                     right[1] - position[1],
@@ -383,14 +362,16 @@ def update_camera(track,t0,t1)
   forward_delta = [ forward[0] - position[0],
                     forward[1] - position[1],
                     forward[2] - position[2] ]
-  up_delta      = Bezier::Trigo.cross_product forward_delta, right_delta
+  up_delta      = [ up[0] - position[0],
+                    up[1] - position[1],
+                    up[2] - position[2] ]
 
   right_delta   = Bezier::Trigo.normalize right_delta
   forward_delta = Bezier::Trigo.normalize forward_delta
   up_delta      = Bezier::Trigo.normalize up_delta
 
   rotation    = [ [  -right_delta[0],  -right_delta[1],  -right_delta[2], 0.0 ],
-                  [     -up_delta[0],     -up_delta[1],     -up_delta[2], 0.0 ],
+                  [      up_delta[0],      up_delta[1],      up_delta[2], 0.0 ],
                   [-forward_delta[0],-forward_delta[1],-forward_delta[2], 0.0 ],
                   [              0.0,              0.0,              0.0, 1.0 ] ]
   translation = [ [ 1.0, 0.0, 0.0, -position[0] ],

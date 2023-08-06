@@ -3,7 +3,7 @@ module Bezier
     DEFAULT_DISTANCE  = 10
     FORWARD_EPSILON   = 0.01
 
-    attr_reader :center, :right, :ratios
+    attr_reader :center, :right, :mappings
 
     ### INITIALIZATION :
     def initialize(center_anchors,right_anchors,should_close,should_balance,steps=DEFAULT_STEPS)
@@ -13,7 +13,7 @@ module Bezier
       close   if should_close
       balance if should_balance
 
-      calculate_ratios
+      calculate_mappings
     end
 
 
@@ -84,31 +84,53 @@ module Bezier
 
 
     ### TRAVERSING :
-    def calculate_ratios
+    def calculate_mappings
       cumulated_length_center = 0.0
       cumulated_length_right  = 0.0
-      @ratios = @center.sections.zip(@right.sections).map do |center_section,right_section|
-                  ratio = { ratio:                    center_section.length /
-                                                      right_section.length,
-                            cumulated_length_center:  cumulated_length_center,
-                            cumulated_length_right:   cumulated_length_right }
+      @mappings = @center.sections.length.times.map do |i|
+                    ratio     = @right.sections[i].length / @center.sections[i].length
+                    interval  = cumulated_length_center..
+                                (cumulated_length_center + @center.sections[i].length)
+                    mapping   = { ratio:                    ratio,
+                                  interval:                 interval,
+                                  cumulated_length_center:  cumulated_length_center,
+                                  cumulated_length_right:   cumulated_length_right }
 
-                  cumulated_length_center += center_section.length
-                  cumulated_length_right  += right_section.length
+                    cumulated_length_center += @center.sections[i].length
+                    cumulated_length_right  += @right.sections[i].length
 
-                  ratio
-                end
+                    mapping
+                  end
     end
 
     def coords_at(t0,distance=DEFAULT_DISTANCE)
+      # Get point coordinates :
       center  = @center.coords_at(t0)
 
+      # Get forward offset point coordinates :
       t1  = t0 + FORWARD_EPSILON
       t1  = t1 - 1.0  if t1 > 1.0
       forward   = @center.coords_at(t1)
 
-      right   = @right.coords_at(t0)
-      up      = calculate_up center, forward, right, distance
+      # Get right offset point coordiantes :
+      center_distance = t0 * @center.length
+
+      mapping = nil
+      @mappings.each do |a_mapping|
+        if a_mapping[:interval].include? center_distance
+          mapping = a_mapping
+          break
+        end
+      end
+
+      t0_right  = ( mapping[:cumulated_length_right] +
+                    mapping[:ratio] *
+                    ( center_distance - mapping[:cumulated_length_center] ) ) /
+                  @right.length
+      right     = @right.coords_at(t0_right)
+
+      # Calculate up offset point coordiantes :
+      up = calculate_up center, forward, right, distance
 
       [ center, right, up ]
     end
